@@ -6,3 +6,8 @@ sky:
     database: sky_take_out
     username: root
     password: 222222
+  alioss:
+    endpoint: https://oss-cn-beijing.aliyuncs.com
+    access-key-id: ${ALIYUNN_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUNN_ACCESS_KEY_SECRET}
+    bucket-name: tfory

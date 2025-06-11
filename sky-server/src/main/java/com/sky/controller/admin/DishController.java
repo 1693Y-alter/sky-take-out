@@ -11,6 +11,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,10 @@ public class DishController {
         log.info("新增菜品:{}",dishDTO);
         dishService.saveWithFlavor(dishDTO);
 
+        // 清理缓存数据
+        String key = "dish_" + dishDTO.getCategoryId();
+        cleanCache(key);
+
         return Result.success();
     }
 
@@ -68,6 +73,10 @@ public class DishController {
         // 这里的@RequestParam有点说法，SpringMVC提供的，里面的数据默认是按照逗号分隔，符合我们的需求( 例如: [1,2,3] )
         log.info("菜品批量删除：{}", ids);
         dishService.deleteBatch(ids);
+
+        // 将所有的菜品缓存数据删除，所有以的dish_开头的
+        cleanCache("dish_*");
+
         return Result.success();
     }
 
@@ -107,5 +116,29 @@ public class DishController {
     public Result<List<Dish>> list(Long categoryId){
         List<Dish> list = dishService.list(categoryId);
         return Result.success(list);
+    }
+
+    /**
+     * 起售停售菜品
+     * @param id
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("起售停售菜品")
+    public Result startOrStop(Long id, @PathVariable Integer status) {
+        log.info("起售停售菜品id:{},status:{}", id, status);
+        dishService.startOrStop(id, status);
+
+        cleanCache("dish_*");
+        return Result.success();
+    }
+
+    /**
+     * 清理缓存数据
+     * @param pattern
+     */
+    private void cleanCache(String pattern){
+        Set keys = redisTemplate.keys(pattern);
+        redisTemplate.delete(keys);
     }
 }
